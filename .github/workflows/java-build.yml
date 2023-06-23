@@ -1,0 +1,38 @@
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+      jdk-version:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout latest commit
+        if: ${{ inputs.ref == '' }}
+        uses: actions/checkout@v3.5.3
+      - name: Checkout requested ref
+        if: ${{ inputs.ref != '' }}
+        uses: actions/checkout@v3.5.3
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: gradle/wrapper-validation-action@v1.0.6
+      - name: Setup JDK ${{ inputs.jdk-version }}
+        uses: actions/setup-java@v3.11.0
+        with:
+          java-version: ${{ inputs.jdk-version }}
+          distribution: temurin
+      - name: Make gradlew executable
+        if: ${{ runner.os != 'Windows' }}
+        run: chmod +x ./gradlew
+      - name: Build
+        run: ./gradlew build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: Artifacts
+          path: build/libs
